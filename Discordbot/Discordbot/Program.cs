@@ -10,10 +10,8 @@ namespace Discordbot
 {
     class Program
     {
-        static void Main(string[] args)
-        {
-            
-        }
+        static void Main(string[] args) => new Program().RunBotAsync().GetAwaiter().GetResult();
+
 
         private DiscordSocketClient _client;
         private CommandService _commands;
@@ -31,6 +29,9 @@ namespace Discordbot
 
             string botToken = "MzkxMTU0MTAzNDkwNzA3NDU3.DRUtxw.R9Dx7ra_EzEwEu93cm3EZWLCC8Y";
 
+            //event subscriptions
+            _client.Log += Log;
+
             await RegisterCommandsAsync();
 
             await _client.LoginAsync(TokenType.Bot, botToken);
@@ -40,6 +41,13 @@ namespace Discordbot
             await Task.Delay(-1);
         }
 
+        private Task Log(LogMessage arg)
+        {
+            Console.WriteLine(arg);
+
+            return Task.CompletedTask;
+        }
+
         public async Task RegisterCommandsAsync()
         {
             _client.MessageReceived += HandleCommandAsync;
@@ -47,7 +55,7 @@ namespace Discordbot
             await _commands.AddModulesAsync(Assembly.GetEntryAssembly());
         }
 
-        private Task HandleCommandAsync(SocketMessage arg)
+        private async Task HandleCommandAsync(SocketMessage arg)
         {
             var message = arg as SocketUserMessage;
 
@@ -55,11 +63,14 @@ namespace Discordbot
 
             int argPos = 0;
 
-            if (message.HasStringPrefix("tnt!", ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
+            if (message.HasStringPrefix("Dansken!", ref argPos) || message.HasMentionPrefix(_client.CurrentUser, ref argPos))
             {
                 var context = new SocketCommandContext(_client, message);
 
-                await _commands.ExecuteAsync
+                var result = await _commands.ExecuteAsync(context, argPos, _services);
+
+                if (!result.IsSuccess)
+                    Console.WriteLine(result.ErrorReason);
             }
         }
     }
